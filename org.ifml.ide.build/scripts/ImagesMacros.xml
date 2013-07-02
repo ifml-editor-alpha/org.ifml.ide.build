@@ -1,0 +1,58 @@
+<project name="ImagesMacros">
+
+    <macrodef name="svg-export">
+        <attribute name="source-file"/>
+        <attribute name="id"/>
+        <attribute name="extent"/>
+        <sequential>
+            <ant antfile="${images-project-location}/scripts/Images.xml" target="svg-export" inheritall="false">
+				<property name="source-file" value="@{source-file}"/>
+				<property name="id" value="@{id}"/>
+				<property name="extent" value="@{extent}"/>
+			</ant>
+        </sequential>
+    </macrodef>
+    
+    <macrodef name="level-colors">
+        <attribute name="color"/>
+        <sequential>
+			<ant antfile="${images-project-location}/scripts/Images.xml" target="level-colors" inheritall="false">
+				<property name="color" value="@{color}"/>
+			</ant>
+		</sequential>
+    </macrodef>
+
+    <macrodef name="polaroid">
+        <sequential>
+			<ant antfile="${images-project-location}/scripts/Images.xml" target="polaroid" inheritall="false"/>
+        </sequential>
+    </macrodef>
+    
+    <macrodef name="resize">
+        <attribute name="extent"/>
+        <sequential>
+			<ant antfile="${images-project-location}/scripts/Images.xml" target="resize" inheritall="false">
+				<property name="extent" value="@{extent}"/>
+			</ant>
+		</sequential>
+    </macrodef>
+    
+    <macrodef name="png-copy">
+        <attribute name="target-file"/>
+        <sequential>
+			<ant antfile="${images-project-location}/scripts/Images.xml" target="copy" inheritall="false">
+				<property name="target-file" value="@{target-file}"/>
+			</ant>
+        </sequential>
+    </macrodef>
+    
+    <macrodef name="optipng">
+        <sequential>
+			<ant antfile="${images-project-location}/scripts/Images.xml" target="optipng" inheritall="false"/>
+        </sequential>
+    </macrodef>
+        
+        
+    
+		
+</project>

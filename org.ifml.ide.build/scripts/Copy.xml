@@ -1,0 +1,14 @@
+<project name="Copy" default="main">
+
+	<condition property="sameContent">
+	  <filesmatch file1="${file1}" file2="${file2}"/>
+	</condition>
+	
+	<target name="main">
+	  <antcall target="copy" />
+	</target>
+	
+	<target name="copy" unless="sameContent">
+	  <copy file="${file1}" tofile="${file2}" overwrite="true"/>
+	</target>
+</project>

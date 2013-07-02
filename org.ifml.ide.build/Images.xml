@@ -1,0 +1,123 @@
+<project name="Images">
+
+	<property name="inkscape-full-path" value="C:/Program Files (x86)/Inkscape/inkscape.exe" />
+	<property name="convert-full-path" value="C:/Program Files (x86)/ImageMagick-6.6.7-Q16/convert.exe" />
+	<property name="optipng-full-path" value="C:/Program Files (x86)/ImageMagick-6.6.7-Q16/optipng.exe" />
+	<property name="temp-file" location="#file.png" />
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="${images-project-location}/lib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+
+	<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy">
+		<classpath>
+			<pathelement location="${images-project-location}/lib/groovy-all.jar" />
+		</classpath>
+	</taskdef>
+
+	<macrodef name="svg-to-png">
+		<attribute name="source-file" />
+		<attribute name="target-file" />
+		<attribute name="id" />
+		<attribute name="extent" />
+		<attribute name="convert-args" default="" />
+		<sequential>
+			<delete quiet="true" file="${temp-file}" />
+			<var name="svg-width" unset="true" />
+			<var name="svg-height" unset="true" />
+			<var name="png-size-axis" unset="true" />
+			<var name="png-size" unset="true" />
+			<exec executable="${inkscape-full-path}" failonerror="true" outputproperty="svg-width">
+				<arg value="@{source-file}" />
+				<arg value="--query-id=@{id}" />
+				<arg value="--query-width" />
+			</exec>
+			<exec executable="${inkscape-full-path}" failonerror="true" outputproperty="svg-height">
+				<arg value="@{source-file}" />
+				<arg value="--query-id=@{id}" />
+				<arg value="--query-height" />
+			</exec>
+			<groovy>
+				<![CDATA[
+println properties["svg-width"]
+println properties["svg-height"]
+double svgWidth = Double.parseDouble(properties["svg-width"].tokenize("RegistryTool")[0])
+double svgHeight = Double.parseDouble(properties["svg-height"].tokenize("RegistryTool")[0])
+double extentWidth = Double.parseDouble("@{extent}".tokenize("x")[0])
+double extentHeight = Double.parseDouble("@{extent}".tokenize("x")[1])
+if (Double.compare(svgWidth / svgHeight, extentWidth / extentHeight) > 0) {
+    properties["png-size-axis"] = "width"
+	properties["png-size"] = "@{extent}".tokenize("x")[0]
+} else {
+    properties["png-size-axis"] = "height"
+	properties["png-size"] = "@{extent}".tokenize("x")[1]
+}
+			]]>
+			</groovy>
+			<exec executable="${inkscape-full-path}" failonerror="true">
+				<arg value="@{source-file}" />
+				<arg value="--export-png=${temp-file}" />
+				<arg value="--export-id=@{id}" />
+				<arg value="--export-${png-size-axis}=${png-size}" />
+			</exec>
+			<exec executable="${convert-full-path}" failonerror="true">
+				<arg line="${temp-file}" />
+				<arg line="@{convert-args} -strip -gravity center -background transparent -extent @{extent}" />
+				<arg line="png32:${temp-file}" />
+			</exec>
+			<ant antfile="${images-project-location}/scripts/Copy.xml">
+				<property name="file1" value="${temp-file}" />
+				<property name="file2" value="@{target-file}" />
+			</ant>
+		</sequential>
+	</macrodef>
+
+	<macrodef name="fuzzy-shadow">
+		<attribute name="file" />
+		<sequential>
+			<exec executable="${convert-full-path}" failonerror="true">
+				<arg line="@{file}" />
+				<arg line="-page +4+4 -alpha set ( +clone -background navy -shadow 60x4+4+4 ) +swap -background none -mosaic" />
+				<arg line="@{file}" />
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="resize">
+	    <attribute name="file"/>
+	    <attribute name="extent"/>
+	    <sequential>
+			<exec executable="${convert-full-path}" failonerror="true">
+				<arg line="@{file}" />
+				<arg line="-resize @{extent} -background none -gravity center -extent @{extent} " />
+				<arg line="@{file}" />
+			</exec>
+	    </sequential>
+	</macrodef>
+	
+	<macrodef name="polaroid">
+		<attribute name="file" />
+		<sequential>
+			<exec executable="${convert-full-path}" failonerror="true">
+				<arg line="@{file}" />
+				<arg line="-bordercolor snow -background SteelBlue4 -polaroid 5 " />
+				<arg line="@{file}" />
+			</exec>
+		</sequential>
+	</macrodef>
+	
+	<macrodef name="level-colors">
+		<attribute name="file" />
+		<attribute name="color" />
+		<sequential>
+			<exec executable="${convert-full-path}" failonerror="true">
+				<arg line="@{file}" />
+				<arg line="+level-colors @{color}, " />
+				<arg line="@{file}" />
+			</exec>
+		</sequential>
+	</macrodef>
+	
+</project>

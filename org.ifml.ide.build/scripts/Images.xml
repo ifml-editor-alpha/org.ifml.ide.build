@@ -1,0 +1,110 @@
+<project name="Images">
+
+	<property name="inkscape-full-path" value="C:/Program Files (x86)/Inkscape/inkscape.exe" />
+	<property name="convert-full-path" value="C:/Program Files (x86)/ImageMagick-6.8.2-Q16/convert.exe" />
+	<property name="optipng-full-path" value="C:/Program Files (x86)/ImageMagick-6.8.2-Q16/optipng.exe" />
+	
+	<property name="temp-file" location="#file.png" />
+	
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties">
+		<classpath>
+			<pathelement location="../lib/ant-contrib-1.0b3.jar" />
+		</classpath>
+	</taskdef>
+
+	<taskdef name="groovy" classname="org.codehaus.groovy.ant.Groovy">
+		<classpath>
+			<pathelement location="../lib/groovy-all.jar" />
+		</classpath>
+	</taskdef>
+	
+	<target name="svg-export">
+	    <property name="convert-args" value=""/>
+		<exec executable="${inkscape-full-path}" failonerror="true" outputproperty="svg-width">
+			<arg value="${source-file}" />
+			<arg value="--query-id=${id}" />
+			<arg value="--query-width" />
+		</exec>
+		<exec executable="${inkscape-full-path}" failonerror="true" outputproperty="svg-height">
+			<arg value="${source-file}" />
+			<arg value="--query-id=${id}" />
+			<arg value="--query-height" />
+		</exec>
+		<groovy>
+			<![CDATA[
+double svgWidth = Double.parseDouble(properties["svg-width"].tokenize("\n")[1])
+double svgHeight = Double.parseDouble(properties["svg-height"].tokenize("\n")[1])
+double extentWidth = Double.parseDouble(properties["extent"].tokenize("x")[0])
+double extentHeight = Double.parseDouble(properties["extent"].tokenize("x")[1])
+if (Double.compare(svgWidth / svgHeight, extentWidth / extentHeight) > 0) {
+    properties["png-size-axis"] = "width"
+	properties["png-size"] = properties["extent"].tokenize("x")[0]
+} else {
+    properties["png-size-axis"] = "height"
+	properties["png-size"] = properties["extent"].tokenize("x")[1]
+}
+			]]>
+		</groovy>
+		<exec executable="${inkscape-full-path}" failonerror="true">
+			<arg value="${source-file}" />
+			<arg value="--export-png=${temp-file}" />
+			<arg value="--export-id=${id}" />
+			<arg value="--export-${png-size-axis}=${png-size}" />
+		</exec>
+		<exec executable="${convert-full-path}" failonerror="true">
+			<arg line="${temp-file}" />
+			<arg line="${convert-args} -strip -gravity center -background transparent -extent ${extent}" />
+			<arg line="png32:${temp-file}" />
+		</exec>
+	</target>
+	
+	<target name="level-colors">
+		<exec executable="${convert-full-path}" failonerror="true">
+			<arg line="${temp-file}" />
+			<arg line="+level-colors ${color}, " />
+			<arg line="${temp-file}" />
+		</exec>
+	</target>
+	
+	<target name="polaroid">
+		<exec executable="${convert-full-path}" failonerror="true">
+			<arg line="${temp-file}" />
+			<arg line="-bordercolor snow -background SteelBlue4 -polaroid 5 " />
+			<arg line="${temp-file}" />
+		</exec>
+	</target>
+
+	<target name="resize">
+		<exec executable="${convert-full-path}" failonerror="true">
+			<arg line="${temp-file}" />
+			<arg line="-resize ${extent} -background none -gravity center -extent ${extent} " />
+			<arg line="${temp-file}" />
+		</exec>
+	</target>
+	
+	<target name="optipng">
+		<exec executable="${convert-full-path}" failonerror="true">
+			<arg line="${temp-file}" />
+			<arg line="+set date:create +set date:modify " />
+			<arg line="${temp-file}" />
+		</exec>
+	    <exec executable="${optipng-full-path}" failonerror="true">
+			<arg line="-o 7 -preserve" />
+			<arg line="${temp-file}" />
+		</exec>
+	</target>
+	
+	<target name="copy" depends="check-copy,do-copy"/>
+	
+	<target name="check-copy">
+	    <condition property="sameContent">
+  			<filesmatch file1="${temp-file}" file2="${target-file}"/>
+		</condition>
+	</target>
+	
+	<target name="do-copy" unless="sameContent">
+	    <copy file="${temp-file}" tofile="${target-file}" overwrite="true"/>
+	</target>
+	
+		
+</project>
